@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <title>Gerenciamneto Clientes</title>
+    <title>Gerenciamento Clientes</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
         body { font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; }
@@ -20,11 +20,43 @@
         ::-webkit-scrollbar-track { background: #0f172a; }
         ::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
 
+        /* AJUSTES PARA IMPRESSÃO - CORREÇÃO DE FOLHA EM BRANCO */
         @media print {
-            body * { visibility: hidden; }
-            #areaComprovante, #areaComprovante * { visibility: visible; }
-            #areaComprovante { position: absolute; left: 0; top: 0; width: 100%; color: black !important; background: white !important; padding: 0; margin: 0; }
+            @page { size: auto; margin: 0; }
+            html, body {
+                height: 100%;
+                margin: 0 !important;
+                padding: 0 !important;
+                background: white !important;
+                color: black !important;
+                overflow: hidden;
+            }
+            body > *:not(#modalComprovante) { display: none !important; }
+            #modalComprovante {
+                position: absolute !important;
+                left: 0 !important;
+                top: 0 !important;
+                width: 100% !important;
+                height: 100% !important;
+                background: white !important;
+                display: block !important;
+                visibility: visible !important;
+                padding: 0 !important;
+                margin: 0 !important;
+            }
+            #areaComprovante {
+                box-shadow: none !important;
+                border: none !important;
+                width: 100% !important;
+                max-width: 100% !important;
+                margin: 0 !important;
+                padding: 20mm !important;
+                position: relative !important;
+            }
             .no-print { display: none !important; }
+            .text-blue-600 { color: #2563eb !important; }
+            .text-emerald-600 { color: #059669 !important; }
+            .text-red-600 { color: #dc2626 !important; }
         }
     </style>
 </head>
@@ -35,7 +67,7 @@
         let SENHA_USUARIO = "";
         let DADOS_BRUTOS = [];
         let timeoutInatividade;
-        let meuGrafico = null; // Variável para o gráfico
+        let meuGrafico = null;
 
         function resetTimer() {
             clearTimeout(timeoutInatividade);
@@ -59,12 +91,19 @@
         window.onkeydown = resetTimer;
     </script>
 
-    <div id="login-screen" class="fixed inset-0 bg-slate-950 flex items-center justify-center z-[200] p-4">
-        <div class="bg-slate-900 p-6 md:p-8 rounded-3xl border border-slate-800 shadow-2xl w-full max-w-sm text-center">
-            <h1 class="text-2xl font-black text-blue-500 mb-6 tracking-tighter uppercase italic">System Pay</h1>
-            <input type="password" id="input-senha" placeholder="Senha de acesso" 
-                   class="w-full p-4 bg-slate-800 border border-slate-700 rounded-2xl outline-none focus:border-blue-500 text-center text-2xl mb-4 text-white">
-            <button id="btnLogin" onclick="fazerLogin()" class="w-full bg-blue-600 p-4 rounded-2xl font-black uppercase tracking-widest hover:bg-blue-500 active:scale-95 transition-all">Entrar</button>
+    <div id="login-screen" class="fixed inset-0 bg-[#020617] flex items-center justify-center z-[200] p-4">
+        <div class="w-full max-w-lg">
+            <h1 class="text-center text-blue-500 font-black italic uppercase tracking-tighter text-xl mb-8">SYSTEM PAY</h1>
+            
+            <div class="space-y-4">
+                <input type="password" id="input-senha" placeholder="Senha de acesso" 
+                       class="w-full p-4 bg-[#1e293b]/30 border border-slate-800 rounded-lg outline-none focus:border-blue-500 text-center text-lg text-white placeholder-slate-500">
+                
+                <button id="btnLogin" onclick="fazerLogin()" 
+                        class="w-full bg-blue-600 p-4 rounded-lg font-bold uppercase tracking-widest text-white hover:bg-blue-500 active:scale-[0.98] transition-all">
+                    ENTRAR
+                </button>
+            </div>
         </div>
     </div>
 
@@ -137,7 +176,7 @@
     </div>
 
     <div id="modalComprovante" class="hidden fixed inset-0 bg-black/95 flex items-start md:items-center justify-center p-2 md:p-4 z-[300] backdrop-blur-md overflow-y-auto">
-        <div class="bg-white text-slate-900 p-5 md:p-8 rounded-xl w-full max-w-md shadow-2xl my-4" id="areaComprovante">
+        <div class="bg-white text-slate-900 p-6 md:p-8 rounded-xl w-full max-w-md shadow-2xl my-4" id="areaComprovante">
             <div class="text-center border-b-2 border-slate-100 pb-4 mb-4">
                 <h2 class="text-xl md:text-2xl font-black uppercase italic text-blue-600">Comprovante</h2>
                 <p class="text-[9px] text-slate-400 font-bold uppercase tracking-tighter">System Pay - Controle de Vendas</p>
@@ -229,7 +268,7 @@
     </div>
 
     <div id="modalPag" class="hidden fixed inset-0 bg-black/95 flex items-center justify-center p-4 z-[100] backdrop-blur-sm">
-        <div class="bg-slate-900 p-6 md:p-8 rounded-3xl w-full max-w-sm border border-slate-800 shadow-2xl">
+        <div class="bg-slate-900 p-6 md:p-8 rounded-3xl w-full max-sm border border-slate-800 shadow-2xl">
             <h2 id="pagNome" class="text-xl font-black mb-1 text-white uppercase italic">Baixa</h2>
             <p id="pagRestante" class="text-[10px] text-red-500 mb-6 font-bold uppercase"></p>
             <div class="relative mb-6">
@@ -260,7 +299,7 @@
                 document.getElementById('main-app').classList.remove('hidden');
                 resetTimer();
             } else { alert("Senha incorreta"); SENHA_USUARIO = ""; }
-            btn.innerText = "Entrar"; btn.disabled = false;
+            btn.innerText = "ENTRAR"; btn.disabled = false;
         }
 
         async function api(dados) {
@@ -287,10 +326,7 @@
             document.getElementById('st-bruto').innerText = `R$ ${data.stats.bruto.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
             document.getElementById('st-rec').innerText = `R$ ${data.stats.recebido.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
             document.getElementById('st-rest').innerText = `R$ ${data.stats.restante.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
-            
-            // Atualiza o gráfico
             atualizarGrafico(data.stats.recebido, data.stats.restante);
-
             renderTabela(DADOS_BRUTOS);
             renderLogs(DADOS_BRUTOS);
             return true;
@@ -298,11 +334,7 @@
 
         function atualizarGrafico(recebido, pendente) {
             const ctx = document.getElementById('graficoResumo').getContext('2d');
-            
-            if (meuGrafico) {
-                meuGrafico.destroy();
-            }
-
+            if (meuGrafico) meuGrafico.destroy();
             meuGrafico = new Chart(ctx, {
                 type: 'doughnut',
                 data: {
@@ -311,8 +343,7 @@
                         data: [recebido, pendente],
                         backgroundColor: ['#10b981', '#ef4444'],
                         borderColor: '#0f172a',
-                        borderWidth: 5,
-                        hoverOffset: 4
+                        borderWidth: 5
                     }]
                 },
                 options: {
@@ -320,11 +351,7 @@
                     plugins: {
                         legend: {
                             position: 'bottom',
-                            labels: {
-                                color: '#94a3b8',
-                                font: { size: 10, weight: 'bold' },
-                                padding: 20
-                            }
+                            labels: { color: '#94a3b8', font: { size: 10, weight: 'bold' } }
                         }
                     },
                     cutout: '70%'
@@ -450,4 +477,4 @@
         }
     </script>
 </body>
-</html> 
+</html>
