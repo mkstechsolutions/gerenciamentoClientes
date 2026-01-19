@@ -16,9 +16,22 @@
             50% { background-color: rgba(220, 38, 38, 0.08); }
         }
 
+        .hoje-glow { text-shadow: 0 0 8px rgba(59, 130, 246, 0.5); font-weight: 900 !important; }
+
         ::-webkit-scrollbar { width: 4px; height: 4px; }
         ::-webkit-scrollbar-track { background: #0f172a; }
         ::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
+
+        .loading-shimmer {
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.05), transparent);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
+        }
+        @keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
+
+        @media (max-width: 640px) {
+            .modal-scroll { max-height: 90vh; overflow-y: auto; }
+        }
 
         @media print {
             @page { size: auto; margin: 0; }
@@ -64,6 +77,7 @@
         let DADOS_BRUTOS = [];
         let timeoutInatividade;
         let meuGrafico = null;
+        let graficoMensal = null;
 
         function resetTimer() {
             clearTimeout(timeoutInatividade);
@@ -111,15 +125,15 @@
         </header>
         
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
-            <div class="bg-slate-900 border border-slate-800 p-6 rounded-3xl border-b-4 border-b-blue-500 shadow-xl">
+            <div class="bg-slate-900 border border-slate-800 p-6 rounded-3xl border-b-4 border-b-blue-500 shadow-xl overflow-hidden relative">
                 <p class="text-slate-500 text-[10px] font-bold uppercase tracking-widest">Bruto Total</p>
                 <h2 id="st-bruto" class="text-2xl md:text-3xl font-black text-blue-400">R$ 0,00</h2>
             </div>
-            <div class="bg-slate-900 border border-slate-800 p-6 rounded-3xl border-b-4 border-b-emerald-500 shadow-xl">
+            <div class="bg-slate-900 border border-slate-800 p-6 rounded-3xl border-b-4 border-b-emerald-500 shadow-xl overflow-hidden relative">
                 <p class="text-slate-500 text-[10px] font-bold uppercase tracking-widest">Recebido</p>
                 <h2 id="st-rec" class="text-2xl md:text-3xl font-black text-emerald-400">R$ 0,00</h2>
             </div>
-            <div class="bg-slate-900 border border-slate-800 p-6 rounded-3xl border-b-4 border-b-red-500 sm:col-span-2 lg:col-span-1 shadow-xl">
+            <div class="bg-slate-900 border border-slate-800 p-6 rounded-3xl border-b-4 border-b-red-500 sm:col-span-2 lg:col-span-1 shadow-xl overflow-hidden relative">
                 <p class="text-slate-500 text-[10px] font-bold uppercase tracking-widest">Pendente</p>
                 <h2 id="st-rest" class="text-2xl md:text-3xl font-black text-red-400">R$ 0,00</h2>
             </div>
@@ -128,40 +142,47 @@
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-8">
             <div class="lg:col-span-4 bg-slate-900 border border-slate-800 p-6 rounded-3xl flex flex-col items-center shadow-lg">
                 <p class="text-slate-500 text-[10px] font-bold uppercase tracking-widest mb-6 w-full text-left">Visão de Recebimento</p>
-                <div class="w-full relative h-[250px] md:h-[300px]">
+                <div class="w-full relative h-[250px]">
                     <canvas id="graficoResumo"></canvas>
                 </div>
             </div>
 
-            <div class="lg:col-span-8 space-y-4">
-                <div class="flex flex-col sm:flex-row gap-3">
-                    <div class="relative flex-1">
-                        <input type="text" id="busca" onkeyup="filtrarTabela()" placeholder="Buscar cliente..."
-                               class="bg-slate-900 border border-slate-800 p-4 pl-12 rounded-2xl w-full outline-none focus:border-blue-500 text-sm font-medium">
-                        <span class="absolute left-4 top-4.5 opacity-30">🔍</span>
-                    </div>
-                    <div class="flex gap-2">
-                        <button onclick="carregar()" id="btnReload" class="bg-slate-900 border border-slate-800 px-5 rounded-2xl hover:bg-slate-800 transition">🔄</button>
-                        <button onclick="switchTab('logs')" class="bg-slate-800/50 px-5 py-4 rounded-2xl font-bold text-[10px] uppercase tracking-widest hover:bg-slate-700 transition">📜 Histórico</button>
-                        <button onclick="abrirNovo()" class="bg-blue-600 px-6 py-4 rounded-2xl font-bold text-[10px] uppercase hover:bg-blue-500 shadow-lg shadow-blue-900/40 transition-all">+ Novo</button>
-                    </div>
+            <div class="lg:col-span-8 bg-slate-900 border border-slate-800 p-6 rounded-3xl shadow-lg">
+                <p class="text-slate-500 text-[10px] font-bold uppercase tracking-widest mb-6">Comparativo (Últimos 6 Meses)</p>
+                <div class="w-full h-[250px]">
+                    <canvas id="graficoMensal"></canvas>
                 </div>
-                
-                <div id="tab-dash" class="bg-slate-900 border border-slate-800 rounded-3xl overflow-hidden shadow-2xl">
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left min-w-[600px]">
-                            <thead class="bg-slate-800/50 text-slate-400 text-[10px] uppercase font-bold">
-                                <tr>
-                                    <th class="p-5">Cliente / Registro</th>
-                                    <th class="p-5">Item</th>
-                                    <th class="p-5">Saldo</th>
-                                    <th class="p-5">Vencimento</th>
-                                    <th class="p-5 text-center">Ação</th>
-                                </tr>
-                            </thead>
-                            <tbody id="lista" class="divide-y divide-slate-800/50"></tbody>
-                        </table>
-                    </div>
+            </div>
+        </div>
+
+        <div class="space-y-4">
+            <div class="flex flex-col sm:flex-row gap-3">
+                <div class="relative flex-1">
+                    <input type="text" id="busca" onkeyup="filtrarTabela()" placeholder="Buscar cliente..."
+                           class="bg-slate-900 border border-slate-800 p-4 pl-12 rounded-2xl w-full outline-none focus:border-blue-500 text-sm font-medium">
+                    <span class="absolute left-4 top-4 opacity-30">🔍</span>
+                </div>
+                <div class="flex gap-2">
+                    <button onclick="carregar()" id="btnReload" class="bg-slate-900 border border-slate-800 px-5 rounded-2xl hover:bg-slate-800 transition active:scale-90">🔄</button>
+                    <button onclick="switchTab('logs')" class="bg-slate-800/50 px-5 py-4 rounded-2xl font-bold text-[10px] uppercase tracking-widest hover:bg-slate-700 transition">📜 Histórico</button>
+                    <button onclick="abrirNovo()" class="bg-blue-600 px-6 py-4 rounded-2xl font-bold text-[10px] uppercase hover:bg-blue-500 shadow-lg shadow-blue-900/40 transition-all active:scale-95">+ Novo</button>
+                </div>
+            </div>
+            
+            <div id="tab-dash" class="bg-slate-900 border border-slate-800 rounded-3xl overflow-hidden shadow-2xl">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left min-w-[700px]">
+                        <thead class="bg-slate-800/50 text-slate-400 text-[10px] uppercase font-bold">
+                            <tr>
+                                <th class="p-5">Cliente / Registro</th>
+                                <th class="p-5">Item</th>
+                                <th class="p-5">Saldo</th>
+                                <th class="p-5">Vencimento</th>
+                                <th class="p-5 text-center">Ação</th>
+                            </tr>
+                        </thead>
+                        <tbody id="lista" class="divide-y divide-slate-800/50"></tbody>
+                    </table>
                 </div>
             </div>
         </div>
@@ -180,7 +201,6 @@
                 <h2 class="text-3xl font-black uppercase italic text-blue-600 tracking-tighter">Comprovante de Pagamento</h2>
                 <p class="text-xs text-slate-400 font-bold uppercase tracking-widest mt-1">MKS Tech Solutions</p>
             </div>
-            
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm mb-8">
                 <div class="space-y-3">
                     <div class="border-b pb-1"><p class="text-[10px] text-slate-400 font-bold uppercase">Nome do Cliente</p><p id="compNome" class="font-black text-lg">---</p></div>
@@ -192,16 +212,13 @@
                     <div class="border-b-2 border-slate-900 pb-1"><p class="text-[10px] text-red-600 font-bold uppercase">Saldo Devedor</p><p id="compRestante" class="font-black text-red-600 text-lg">---</p></div>
                 </div>
             </div>
-
             <div class="mt-4">
                 <h3 class="text-xs font-black uppercase text-slate-900 mb-3 border-l-4 border-blue-600 pl-2">Histórico de Parcelas</h3>
                 <div id="compListaLogs" class="text-xs space-y-2 bg-slate-50 p-4 rounded-xl border italic leading-relaxed"></div>
             </div>
-
             <div class="mt-10 pt-6 border-t border-slate-100 text-center">
                 <p class="text-[10px] text-slate-400 font-bold uppercase">Documento gerado em <span id="compData">00/00/0000</span></p>
             </div>
-
             <div class="mt-8 flex gap-3 no-print">
                 <button onclick="fecharComprovante()" class="flex-1 bg-slate-200 p-4 rounded-xl font-bold text-xs uppercase hover:bg-slate-300">Fechar</button>
                 <button onclick="window.print()" class="flex-1 bg-blue-600 text-white p-4 rounded-xl font-black text-xs uppercase shadow-lg hover:bg-blue-700">Imprimir / Salvar PDF</button>
@@ -210,7 +227,7 @@
     </div>
 
     <div id="modalNovo" class="hidden fixed inset-0 bg-black/95 flex items-center justify-center p-4 z-[100] backdrop-blur-sm overflow-y-auto">
-        <div class="bg-slate-900 p-6 md:p-8 rounded-3xl w-full max-w-xl border border-slate-800 shadow-2xl">
+        <div class="bg-slate-900 p-6 md:p-8 rounded-3xl w-full max-w-xl border border-slate-800 shadow-2xl modal-scroll">
             <h2 class="text-xl font-black mb-6 text-blue-500 uppercase italic">Novo Cadastro</h2>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <input id="n_nome" placeholder="Nome Completo" class="md:col-span-2 w-full p-4 bg-slate-800 rounded-2xl outline-none border border-slate-700 focus:border-blue-500 text-sm">
@@ -239,14 +256,14 @@
                 <textarea id="n_obs" placeholder="Observações..." class="md:col-span-2 w-full p-4 bg-slate-800 rounded-2xl h-20 outline-none border border-slate-700 text-sm"></textarea>
             </div>
             <div class="flex justify-end gap-4 mt-8">
-                <button onclick="fecharNovo()" class="text-slate-500 font-bold text-xs uppercase">Cancelar</button>
-                <button id="btnSalvar" onclick="salvarNovoCliente()" class="bg-blue-600 px-8 py-4 rounded-2xl font-black uppercase text-xs text-white">Cadastrar</button>
+                <button onclick="fecharNovo()" class="text-slate-500 font-bold text-xs uppercase hover:text-white">Cancelar</button>
+                <button id="btnSalvar" onclick="salvarNovoCliente()" class="bg-blue-600 px-8 py-4 rounded-2xl font-black uppercase text-xs text-white active:scale-95">Cadastrar</button>
             </div>
         </div>
     </div>
 
     <div id="modalPag" class="hidden fixed inset-0 bg-black/95 flex items-center justify-center p-4 z-[100] backdrop-blur-sm">
-        <div class="bg-slate-900 p-8 rounded-3xl w-full max-w-sm border border-slate-800 shadow-2xl text-center">
+        <div class="bg-slate-900 p-8 rounded-3xl w-full max-sm:max-w-xs border border-slate-800 shadow-2xl text-center">
             <h2 id="pagNome" class="text-xl font-black mb-1 text-white uppercase italic">Baixa de Pagamento</h2>
             <div id="pagInfoParcela" class="bg-blue-500/10 text-blue-400 p-3 rounded-xl text-center mb-4 font-bold text-sm border border-blue-500/20"></div>
             <p id="pagRestante" class="text-[10px] text-red-500 mb-6 font-bold uppercase"></p>
@@ -256,162 +273,241 @@
             </div>
             <div class="flex gap-3">
                 <button onclick="fecharModalPag()" class="flex-1 text-slate-500 font-bold uppercase text-[10px]">Sair</button>
-                <button id="btnConfirmar" onclick="confirmarPagamento()" class="flex-[2] bg-emerald-600 p-4 rounded-2xl font-black uppercase text-sm text-white">Confirmar</button>
+                <button id="btnConfirmar" onclick="confirmarPagamento()" class="flex-[2] bg-emerald-600 p-4 rounded-2xl font-black uppercase text-sm text-white active:scale-95">Confirmar</button>
             </div>
         </div>
     </div>
 
     <script>
-        let indexPlanilhaGlobal = -1;
-        const sel = document.getElementById('n_parc');
-        for(let i=1; i<=36; i++) sel.innerHTML += `<option value="${i}">${i}x</option>`;
+    let indexPlanilhaGlobal = -1;
+    const sel = document.getElementById('n_parc');
+    for(let i=1; i<=36; i++) sel.innerHTML += `<option value="${i}">${i}x</option>`;
 
-        async function fazerLogin() {
-            const btn = document.getElementById('btnLogin');
-            const senhaInput = document.getElementById('input-senha').value;
-            if(!senhaInput) return;
-            btn.innerText = "VALIDANDO..."; btn.disabled = true;
-            SENHA_USUARIO = senhaInput;
-            const sucesso = await carregar();
-            if(sucesso) {
-                document.getElementById('login-screen').classList.add('hidden');
-                document.getElementById('main-app').classList.remove('hidden');
-                resetTimer();
-            } else { alert("Senha incorreta"); SENHA_USUARIO = ""; }
-            btn.innerText = "ENTRAR"; btn.disabled = false;
-        }
+    async function fazerLogin() {
+        const btn = document.getElementById('btnLogin');
+        const senhaInput = document.getElementById('input-senha').value;
+        if(!senhaInput) return;
+        btn.innerText = "VALIDANDO..."; btn.disabled = true;
+        SENHA_USUARIO = senhaInput;
+        const sucesso = await carregar();
+        if(sucesso) {
+            document.getElementById('login-screen').classList.add('hidden');
+            document.getElementById('main-app').classList.remove('hidden');
+            resetTimer();
+        } else { alert("Senha incorreta"); SENHA_USUARIO = ""; }
+        btn.innerText = "ENTRAR"; btn.disabled = false;
+    }
 
-        async function api(dados) {
-            dados.senha = SENHA_USUARIO;
-            try {
-                const response = await fetch(WEB_APP_URL, { method: "POST", body: JSON.stringify(dados) });
-                return await response.json();
-            } catch (err) { return { success: false }; }
-        }
+    async function api(dados) {
+        dados.senha = SENHA_USUARIO;
+        try {
+            const response = await fetch(WEB_APP_URL, { method: "POST", body: JSON.stringify(dados) });
+            return await response.json();
+        } catch (err) { return { success: false }; }
+    }
 
-        function switchTab(t) {
-            document.getElementById('tab-dash').classList.toggle('hidden', t !== 'dash');
-            document.getElementById('tab-logs').classList.toggle('hidden', t !== 'logs');
-            window.scrollTo(0,0);
-        }
+    function switchTab(t) {
+        document.getElementById('tab-dash').classList.toggle('hidden', t !== 'dash');
+        document.getElementById('tab-logs').classList.toggle('hidden', t !== 'logs');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
 
-        async function carregar() {
-            const btn = document.getElementById('btnReload');
-            btn.innerHTML = "⏳";
-            const data = await api({ action: "buscar" });
-            btn.innerHTML = "🔄";
-            if(!data.rows) return false;
-            
-            // Mapeia os dados mantendo o índice real da planilha para ações precisas
-            DADOS_BRUTOS = data.rows.map((r, i) => { r.push(i); return r; });
-            
-            document.getElementById('st-bruto').innerText = `R$ ${data.stats.bruto.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
-            document.getElementById('st-rec').innerText = `R$ ${data.stats.recebido.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
-            document.getElementById('st-rest').innerText = `R$ ${data.stats.restante.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
-            
-            atualizarGrafico(data.stats.recebido, data.stats.restante);
-            renderTabela(DADOS_BRUTOS);
-            renderLogs(DADOS_BRUTOS);
-            return true;
-        }
+    async function carregar() {
+        const btn = document.getElementById('btnReload');
+        const cards = document.querySelectorAll('.bg-slate-900.border-b-4');
+        
+        btn.innerHTML = "⏳";
+        cards.forEach(c => c.classList.add('loading-shimmer'));
 
-        function atualizarGrafico(recebido, pendente) {
-            const ctx = document.getElementById('graficoResumo').getContext('2d');
-            if (meuGrafico) meuGrafico.destroy();
-            meuGrafico = new Chart(ctx, {
-                type: 'doughnut',
-                data: {
-                    labels: ['Recebido', 'Pendente'],
-                    datasets: [{
-                        data: [recebido, pendente],
-                        backgroundColor: ['#10b981', '#ef4444'],
-                        borderColor: '#0f172a',
-                        borderWidth: 8
-                    }]
+        const data = await api({ action: "buscar" });
+        
+        btn.innerHTML = "🔄";
+        cards.forEach(c => c.classList.remove('loading-shimmer'));
+
+        if(!data.rows) return false;
+        DADOS_BRUTOS = data.rows;
+        
+        document.getElementById('st-bruto').innerText = `R$ ${data.stats.bruto.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
+        document.getElementById('st-rec').innerText = `R$ ${data.stats.recebido.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
+        document.getElementById('st-rest').innerText = `R$ ${data.stats.restante.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
+        
+        atualizarGraficoRosca(data.stats.recebido, data.stats.restante);
+        atualizarGraficoMensal(DADOS_BRUTOS);
+        renderTabela(DADOS_BRUTOS);
+        renderLogs(DADOS_BRUTOS);
+        return true;
+    }
+
+    function atualizarGraficoRosca(recebido, pendente) {
+        const ctx = document.getElementById('graficoResumo').getContext('2d');
+        if (meuGrafico) meuGrafico.destroy();
+        meuGrafico = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Recebido', 'Pendente'],
+                datasets: [{
+                    data: [recebido, pendente],
+                    backgroundColor: ['#10b981', '#ef4444'],
+                    borderColor: '#0f172a',
+                    borderWidth: 8,
+                    hoverOffset: 10
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'bottom', labels: { color: '#94a3b8', font: { size: 10, weight: 'bold' }, padding: 20 } }
                 },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: { position: 'bottom', labels: { color: '#94a3b8', font: { size: 12, weight: 'bold' }, padding: 20 } }
-                    },
-                    cutout: '70%'
-                }
+                cutout: '75%'
+            }
+        });
+    }
+
+    function atualizarGraficoMensal(rows) {
+        const ctx = document.getElementById('graficoMensal').getContext('2d');
+        if (graficoMensal) graficoMensal.destroy();
+
+        const nomesMeses = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
+        const hoje = new Date();
+        const ultimos6 = [];
+
+        for (let i = 5; i >= 0; i--) {
+            const d = new Date(hoje.getFullYear(), hoje.getMonth() - i, 1);
+            ultimos6.push({
+                mes: d.getMonth(),
+                ano: d.getFullYear(),
+                nome: nomesMeses[d.getMonth()],
+                valor: 0
             });
         }
 
-        function converterData(str) {
-            if(!str || typeof str !== 'string') return new Date(2000, 0, 1);
-            const p = str.split('/');
-            return new Date(p[2], p[1]-1, p[0]);
-        }
+        rows.forEach(row => {
+            if (row[17]) {
+                const logs = row[17].split('|');
+                logs.forEach(log => {
+                    const matchValor = log.match(/R\$\s?([\d.,]+)/);
+                    const matchData = log.match(/\((\d{2})\/(\d{2})\/(\d{2,4})\)/);
+                    if (matchValor && matchData) {
+                        const valor = parseFloat(matchValor[1].replace(/\./g, '').replace(',', '.'));
+                        const mesLog = parseInt(matchData[2]) - 1;
+                        let anoLog = parseInt(matchData[3]);
+                        if (anoLog < 100) anoLog += 2000;
+                        const found = ultimos6.find(m => m.mes === mesLog && m.ano === anoLog);
+                        if (found) found.valor += valor;
+                    }
+                });
+            }
+        });
 
-        function renderTabela(rows) {
-            const busca = document.getElementById('busca').value.toLowerCase();
-            const lista = document.getElementById('lista');
-            const hoje = new Date().setHours(0,0,0,0);
-            
-            const ordenados = [...rows].sort((a, b) => {
-                if(a[12] === "Concluído" && b[12] !== "Concluído") return 1;
-                if(a[12] !== "Concluído" && b[12] === "Concluído") return -1;
-                return converterData(a[7]) - converterData(b[7]);
-            });
-
-            lista.innerHTML = ordenados.map((row) => {
-                const idxReal = row[row.length - 1];
-                if(row[12] === "Concluído" && busca === "") return "";
-                if(busca !== "" && !row[0].toLowerCase().includes(busca)) return "";
-                
-                const dataVenc = converterData(row[7]);
-                const diffDias = Math.floor((dataVenc - hoje) / (1000*60*60*24));
-                let corData = "text-blue-400"; let statusIcon = ""; let rowClass = "";
-                
-                if (row[12] !== "Concluído") {
-                    if (diffDias < 0) { corData = "text-red-500"; statusIcon = "⚠️ "; rowClass = "atrasado-row"; }
-                    else if (diffDias <= 3) { corData = "text-orange-500"; statusIcon = "🕒 "; }
+        graficoMensal = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: ultimos6.map(m => m.nome),
+                datasets: [{
+                    label: 'Recebido (R$)',
+                    data: ultimos6.map(m => m.valor),
+                    backgroundColor: 'rgba(59, 130, 246, 0.4)',
+                    hoverBackgroundColor: '#3b82f6',
+                    borderColor: '#3b82f6',
+                    borderWidth: 2,
+                    borderRadius: 8
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#64748b', font: { size: 10 } } },
+                    x: { grid: { display: false }, ticks: { color: '#64748b', font: { size: 10 } } }
+                },
+                plugins: { 
+                    legend: { display: false },
+                    tooltip: {
+                        backgroundColor: '#1e293b',
+                        callbacks: { label: (c) => ` R$ ${c.raw.toLocaleString('pt-BR', {minimumFractionDigits: 2})}` }
+                    }
                 }
-                
-                const acao = row[12] === "Concluído"
-                    ? `<span class="text-emerald-500 text-[10px] font-black uppercase italic tracking-widest">✔ QUITADO</span>`
-                    : `<button onclick="abrirPag(${idxReal})" class="bg-blue-600 px-5 py-2 rounded-xl text-[10px] font-black uppercase text-white hover:bg-blue-500">Receber</button>`;
-                
-                return `<tr class="${rowClass} border-b border-slate-800/50 transition-colors hover:bg-slate-900/40">
-                    <td class="p-5">
-                        <p class="font-bold text-sm text-slate-200">${row[0]}</p>
-                        <p class="text-[9px] text-slate-500 uppercase italic font-bold">Registro: ${row[10]}</p>
-                    </td>
-                    <td class="p-5 text-xs text-slate-500">${row[2]}</td>
-                    <td class="p-5 text-xs font-bold text-red-400">${row[6]}</td>
-                    <td class="p-5 text-xs font-black ${corData}">${statusIcon}${row[7]}</td>
-                    <td class="p-5 text-center">${acao}</td>
-                </tr>`;
-            }).join('');
-        }
+            }
+        });
+    }
 
-        function renderLogs(rows) {
-            const container = document.getElementById('logList');
-            const ordenados = [...rows].filter(r => r[17]).reverse();
-            container.innerHTML = ordenados.map(r => {
-                const idxReal = r[r.length - 1];
-                const isConcluido = r[12] === "Concluído";
-                const itensLog = r[17].split('|').map(p => p.trim()).filter(p => p.length > 0);
-                return `<div class="bg-slate-900 p-5 rounded-3xl border border-slate-800 border-l-4 ${isConcluido ? 'border-l-emerald-500' : 'border-l-blue-600'}">
-                    <div class="flex justify-between items-start gap-2 mb-4">
-                        <div class="truncate">
-                            <h4 class="text-white font-black uppercase text-xs italic truncate">${r[0]}</h4>
-                            <p class="text-[9px] text-slate-500 font-bold uppercase">${r[2]}</p>
-                        </div>
-                        <div class="flex items-center gap-2 shrink-0">
-                            ${isConcluido ? '<span class="text-[8px] bg-emerald-500/10 text-emerald-500 px-2 py-1 rounded-lg border border-emerald-500/20 font-black uppercase">QUITADO</span>' : ''}
-                            <button onclick="gerarComprovante(${idxReal})" class="text-[9px] bg-slate-800 px-3 py-1 rounded-full font-bold hover:bg-slate-700 transition">📄 Recibo</button>
-                        </div>
+    function converterData(str) {
+        if(!str) return new Date();
+        const p = str.split('/');
+        let ano = parseInt(p[2]);
+        if (ano < 100) ano += 2000;
+        return new Date(ano, p[1]-1, p[0]);
+    }
+
+    function renderTabela(rows) {
+        const busca = document.getElementById('busca').value.toLowerCase();
+        const lista = document.getElementById('lista');
+        const hoje = new Date().setHours(0,0,0,0);
+        
+        const ordenados = [...rows].sort((a, b) => {
+            const statusA = a[12] === "Concluído";
+            const statusB = b[12] === "Concluído";
+            if(statusA && !statusB) return 1;
+            if(!statusA && statusB) return -1;
+            return converterData(a[7]) - converterData(b[7]);
+        });
+
+        lista.innerHTML = ordenados.map((row) => {
+            const idxReal = row[row.length - 1];
+            if(busca !== "" && !row[0].toLowerCase().includes(busca)) return "";
+            const dataVenc = converterData(row[7]);
+            const diffDias = Math.floor((dataVenc - hoje) / (1000*60*60*24));
+            const isQuitado = row[12] === "Concluído";
+            let corData = "text-blue-400"; let statusIcon = ""; let rowClass = ""; let glowClass = "";
+
+            if (!isQuitado) {
+                if (diffDias < 0) { corData = "text-red-500"; statusIcon = "⚠️ "; rowClass = "atrasado-row"; }
+                else if (diffDias === 0) { corData = "text-blue-500"; statusIcon = "⭐ "; glowClass = "hoje-glow"; }
+                else if (diffDias <= 3) { corData = "text-orange-500"; statusIcon = "🕒 "; }
+            } else { rowClass = "opacity-50 grayscale-[0.5]"; }
+
+            const acao = isQuitado
+                ? `<span class="text-emerald-500 text-[10px] font-black uppercase italic tracking-widest">✔ QUITADO</span>`
+                : `<button onclick="abrirPag(${idxReal})" class="bg-blue-600 px-6 py-2.5 rounded-xl text-[10px] font-black uppercase text-white hover:bg-blue-500 active:scale-90 transition">Receber</button>`;
+
+            return `<tr class="${rowClass} border-b border-slate-800/50 transition-colors hover:bg-slate-900/40">
+                <td class="p-5">
+                    <p class="font-bold text-sm text-slate-200">${row[0]}</p>
+                    <p class="text-[9px] text-slate-500 uppercase italic font-bold">Reg: ${row[10]}</p>
+                </td>
+                <td class="p-5 text-xs text-slate-500">${row[2]}</td>
+                <td class="p-5 text-xs font-bold ${isQuitado ? 'text-slate-500' : 'text-red-400'}">${row[6]}</td>
+                <td class="p-5 text-xs font-black ${isQuitado ? 'text-slate-500' : corData} ${glowClass}">${statusIcon}${row[7]}</td>
+                <td class="p-5 text-center">${acao}</td>
+            </tr>`;
+        }).join('');
+    }
+
+    function renderLogs(rows) {
+        const container = document.getElementById('logList');
+        const ordenados = [...rows].filter(r => r[17]).reverse();
+        container.innerHTML = ordenados.map(r => {
+            const idxReal = r[r.length - 1];
+            const isConcluido = r[12] === "Concluído";
+            const itensLog = r[17].split('|').map(p => p.trim()).filter(p => p.length > 0);
+            return `<div class="bg-slate-900 p-5 rounded-3xl border border-slate-800 border-l-4 ${isConcluido ? 'border-l-emerald-500' : 'border-l-blue-600'}">
+                <div class="flex justify-between items-start gap-2 mb-4">
+                    <div class="truncate">
+                        <h4 class="text-white font-black uppercase text-xs italic truncate">${r[0]}</h4>
+                        <p class="text-[9px] text-slate-500 font-bold uppercase">${r[2]}</p>
                     </div>
-                    <div class="text-[11px] text-slate-400 font-mono bg-slate-950 p-4 rounded-2xl border border-slate-800/50 space-y-2 max-h-40 overflow-y-auto">
-                        ${itensLog.map((p, i) => `<div class="${i === 0 ? 'text-emerald-400 font-bold' : ''} py-1 border-b border-slate-800 last:border-0">${p}</div>`).join('')}
+                    <div class="flex items-center gap-2 shrink-0">
+                        ${isConcluido ? '<span class="text-[8px] bg-emerald-500/10 text-emerald-500 px-2 py-1 rounded-lg border border-emerald-500/20 font-black uppercase">QUITADO</span>' : ''}
+                        <button onclick="gerarComprovante(${idxReal})" class="text-[9px] bg-slate-800 px-3 py-2 rounded-xl font-bold hover:bg-slate-700 transition active:scale-90">📄 Recibo</button>
                     </div>
-                </div>`;
-            }).join('');
-        }
+                </div>
+                <div class="text-[11px] text-slate-400 font-mono bg-slate-950 p-4 rounded-2xl border border-slate-800/50 space-y-2 max-h-40 overflow-y-auto">
+                    ${itensLog.map((p, i) => `<div class="${i === 0 ? 'text-emerald-400 font-bold' : ''} py-1 border-b border-slate-800 last:border-0">${p}</div>`).join('')}
+                </div>
+            </div>`;
+        }).join('');
+    }
 
         function gerarComprovante(idx) {
             const dados = DADOS_BRUTOS.find(r => r[r.length - 1] === idx);
@@ -422,8 +518,8 @@
             document.getElementById('compRecebido').innerText = dados[5];
             document.getElementById('compRestante').innerText = dados[6];
             document.getElementById('compData').innerText = new Date().toLocaleDateString('pt-BR');
-            const logsHTML = dados[17] ? dados[17].split('|').map(l => `<div class="border-b border-slate-100 py-1 last:border-0">${l.trim()}</div>`).join('') : "Nenhum histórico.";
-            document.getElementById('compListaLogs').innerHTML = logsHTML;
+            const logsHTML = dados[17].split('|').map(l => `<div class="border-b border-slate-100 py-1 last:border-0">${l.trim()}</div>`).join('');
+            document.getElementById('compListaLogs').innerHTML = logsHTML || "Nenhum histórico disponível.";
             document.getElementById('modalComprovante').classList.remove('hidden');
         }
 
@@ -434,7 +530,7 @@
             indexPlanilhaGlobal = idx + 2;
             const item = DADOS_BRUTOS.find(r => r[r.length - 1] === idx);
             document.getElementById('pagNome').innerText = item[0];
-            document.getElementById('pagInfoParcela').innerText = `VALOR DA PARCELA: ${item[8]}`;
+            document.getElementById('pagInfoParcela').innerText = `PARCELA: ${item[8]}`;
             document.getElementById('pagRestante').innerText = `SALDO DEVEDOR: ${item[6]}`;
             const valorSugerido = item[8].replace("R$", "").replace(/\./g, "").replace(",", ".").trim();
             document.getElementById('vPago').value = valorSugerido;
@@ -454,29 +550,52 @@
             btn.innerText = "Confirmar"; btn.disabled = false;
         }
 
-        function abrirNovo() { document.getElementById('n_data_pag').valueAsDate = new Date(); document.getElementById('modalNovo').classList.remove('hidden'); }
-        function fecharNovo() { document.getElementById('modalNovo').classList.add('hidden'); }
+        function abrirNovo() { 
+            document.getElementById('n_data_pag').valueAsDate = new Date(); 
+            document.getElementById('modalNovo').classList.remove('hidden'); 
+        }
+
+        function fecharNovo() { 
+            document.getElementById('modalNovo').classList.add('hidden'); 
+        }
+
+        // FUNÇÃO ADICIONADA PARA LIMPAR OS DADOS
+        function limparFormularioNovo() {
+            const campos = ['n_nome', 'n_tel', 'n_item', 'n_valor', 'n_entrada', 'n_val_parc', 'n_obs'];
+            campos.forEach(id => document.getElementById(id).value = "");
+            document.getElementById('n_parc').selectedIndex = 0;
+            document.getElementById('n_data_pag').valueAsDate = new Date();
+        }
 
         async function salvarNovoCliente() {
             const btn = document.getElementById('btnSalvar');
             const nome = document.getElementById('n_nome').value;
             const valor = document.getElementById('n_valor').value;
             if(!nome || !valor) return alert("Preencha Nome e Valor!");
+            
             btn.innerText = "SALVANDO..."; btn.disabled = true;
+            
             const res = await api({
-                action: "adicionar", nome: nome, tel: document.getElementById('n_tel').value,
-                item: document.getElementById('n_item').value, valor: valor,
+                action: "adicionar", 
+                nome: nome, 
+                tel: document.getElementById('n_tel').value,
+                item: document.getElementById('n_item').value, 
+                valor: valor,
                 entrada: document.getElementById('n_entrada').value || 0,
                 valorParcela: document.getElementById('n_val_parc').value || 0,
                 parcelas: document.getElementById('n_parc').value,
                 dataPrimeiroPag: document.getElementById('n_data_pag').value,
                 obs: document.getElementById('n_obs').value
             });
+
             if(res.success) { 
-                document.getElementById('n_nome').value = ""; 
+                limparFormularioNovo(); // Chamada para limpar os dados
                 fecharNovo(); 
                 await carregar(); 
+            } else {
+                alert("Erro ao salvar. Verifique a conexão.");
             }
+            
             btn.innerText = "Cadastrar"; btn.disabled = false;
         }
     </script>
