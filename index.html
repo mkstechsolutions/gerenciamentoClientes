@@ -10,6 +10,7 @@
 
         .roxo { background: linear-gradient(90deg, #7e22ce, #3b82f6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
         .pay-tittle { background: linear-gradient(90deg, #7e22ce, #3b82f6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; padding-right: 5px; }
+        .flex flex-col { display: flex; flex-direction: column; }
         
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
         body { font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; }
@@ -57,12 +58,12 @@
                         <span class="text-3xl">🔒</span>
                     </div>
                     <h1 class="text-blue-500 font-black italic uppercase tracking-tighter text-3xl leading-none">SYSTEM<span class="pay-tittle">PAY</span></h1>
-                    <p class="text-slate-500 text-[10px] font-bold uppercase tracking-[0.3em] mt-2">Acesso Restrito</p>
+                    <p class="text-slate-500 text-[10px] font-bold uppercase tracking-[0.3em] mt-2">Gestão de Clientes e Financeira </p>
                 </div>
 
                 <div class="space-y-5">
                     <div class="relative">
-                        <input type="password" id="input-senha" placeholder="••••••••" 
+                        <input type="password" id="input-senha" placeholder="Senha" 
                             class="w-full p-5 bg-slate-950/50 border border-slate-800 rounded-2xl outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-center text-xl text-white font-bold transition-all placeholder:opacity-20">
                     </div>
                     
@@ -214,7 +215,10 @@
                 <input id="n_entrada" type="text" oninput="formatarInputMoeda(this)" placeholder="Entrada" class="p-4 bg-slate-800 rounded-2xl outline-none border border-slate-700 text-sm font-bold text-emerald-400">
                 <input id="n_val_parc" type="text" oninput="formatarInputMoeda(this)" placeholder="Valor Parcela" class="p-4 bg-slate-800 rounded-2xl outline-none border border-slate-700 text-sm font-bold text-blue-400">
                 <select id="n_parc" class="p-4 bg-slate-800 rounded-2xl outline-none border border-slate-700 text-sm font-bold text-slate-300"></select>
-                <input id="n_data_pag" type="date" class="p-4 bg-slate-800 rounded-2xl outline-none border border-slate-700 text-sm text-slate-300">
+                <span class="flex flex-col">
+                    <label for="n_data_pag" class="text-slate-400 text-xs font-bold uppercase mb-1 block">Data do 1º Vencimento</label>
+                    <input id="n_data_pag" type="date" class="p-4 bg-slate-800 rounded-2xl outline-none border border-slate-700 text-sm text-slate-300">
+                </span>
                 <textarea id="n_obs" placeholder="Observações..." class="md:col-span-2 w-full p-4 bg-slate-800 rounded-2xl h-20 outline-none border border-slate-700 text-sm text-white"></textarea>
             </div>
             <div class="flex justify-end gap-4 mt-8">
